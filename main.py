@@ -1,7 +1,11 @@
 # .\Scripts\Activate.ps1 <-- power shell에선
 # import cv2
 # cv2.__version__
-
+# git push -f origin main --force
+# git remote add origin url
+# pip list
+# pip freeze > requirements.txt
+# pip install -r requirements.txt
 import cv2
 from pathlib import Path
 
