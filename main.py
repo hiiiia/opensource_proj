@@ -27,8 +27,8 @@ weightsFile ="./open_source_pj/3rd_party/openpose-master/models/pose/mpi/pose_it
 # 위의 path에 있는 network 모델 불러오기
 net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
 
-# 쿠다 사용 안하면 밑에 이미지 크기를 줄이는게 나을 것이다
-# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA) #벡엔드로 쿠다를 사용하여 속도향상을 꾀한다
+
+# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA) #벡엔드로 쿠다를 사용하여 속도향상
 # net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA) # 쿠다 디바이스에 계산 요청
 
 
