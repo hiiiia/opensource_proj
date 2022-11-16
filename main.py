@@ -7,6 +7,7 @@
 # pip freeze > requirements.txt
 # pip install -r requirements.txt
 import cv2
+import pafy
 from pathlib import Path
 
 # MPII에서 각 파트 번호, 선으로 연결될 POSE_PAIRS
@@ -31,8 +32,14 @@ net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
 # net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA) # 쿠다 디바이스에 계산 요청
 
 
-###카메라랑 연결...?
-capture = cv2.VideoCapture(0)  # 카메라 정보 받아옴
+###카메라랑 연결
+
+url = "https://www.youtube.com/watch?v=vQNFiMi0m9M"
+video = pafy.new(url)
+best = video.getbest(preftype="mp4")
+capture = cv2.VideoCapture(best.url)
+frameRate = int(capture.get(cv2.CAP_PROP_FPS))
+#capture = cv2.VideoCapture(0)  # 카메라 정보 받아옴
 # capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640) #카메라 속성 설정
 # capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480) # width:너비, height: 높이
 
@@ -41,7 +48,7 @@ inputHeight = 240;
 inputScale = 1.0 / 255;
 
 # 반복문을 통해 카메라에서 프레임을 지속적으로 받아옴
-while cv2.waitKey(1) < 0:  # 아무 키나 누르면 끝난다.
+while True:
     # 웹캠으로부터 영상 가져옴
     hasFrame, frame = capture.read()
 
@@ -103,6 +110,8 @@ while cv2.waitKey(1) < 0:  # 아무 키나 누르면 끝난다.
             cv2.line(frame, points[partA], points[partB], (0, 255, 0), 2)
 
     cv2.imshow("Output-Keypoints", frame)
-
+    key = cv2.waitKey(1)
+    if key == 27:
+        break
 capture.release()  # 카메라 장치에서 받아온 메모리 해제
 cv2.destroyAllWindows()  # 모든 윈도우 창 닫음
