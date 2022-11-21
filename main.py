@@ -1,12 +1,5 @@
-# .\Scripts\Activate.ps1 <-- power shell에선
-# import cv2
-# cv2.__version__
-# git push -f origin main --force
-# git remote add origin url
-# pip list
-# pip freeze > requirements.txt
-# pip install -r requirements.txt
 import cv2
+import os
 import pafy
 from pathlib import Path
 
@@ -34,32 +27,30 @@ net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
 
 ###카메라랑 연결
 
-url = "https://www.youtube.com/watch?v=vQNFiMi0m9M"
-video = pafy.new(url)
-best = video.getbest(preftype="mp4")
-capture = cv2.VideoCapture(best.url)
-frameRate = int(capture.get(cv2.CAP_PROP_FPS))
+#capture = cv2.VideoCapture(best.url)
+#frameRate = int(capture.get(cv2.CAP_PROP_FPS))
 #capture = cv2.VideoCapture(0)  # 카메라 정보 받아옴
 # capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640) #카메라 속성 설정
 # capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480) # width:너비, height: 높이
 
-inputWidth = 320;
-inputHeight = 240;
+inputWidth = 640;
+inputHeight = 480;
 inputScale = 1.0 / 255;
 
+path = 'C:/Users/User/Desktop/ai/013.피트니스자세_sample/원천데이터/1/C/033-1-1-21-Z17_C'
+os.chdir(path)
+files = os.listdir(path)
+name_count = 1
 # 반복문을 통해 카메라에서 프레임을 지속적으로 받아옴
-while True:
+for file in files : 
     # 웹캠으로부터 영상 가져옴
-    hasFrame, frame = capture.read()
+    frame=cv2.imread(file)
 
     # 영상이 커서 느리면 사이즈를 줄이자
     # frame=cv2.resize(frame,dsize=(320,240),interpolation=cv2.INTER_AREA)
 
     # 웹캠으로부터 영상을 가져올 수 없으면 웹캠 중지
-    if not hasFrame:
-        cv2.waitKey()
-        break
-
+  
     #
     frameWidth = frame.shape[1]
     frameHeight = frame.shape[0]
@@ -109,9 +100,7 @@ while True:
         if points[partA] and points[partB]:
             cv2.line(frame, points[partA], points[partB], (0, 255, 0), 2)
 
-    cv2.imshow("Output-Keypoints", frame)
-    key = cv2.waitKey(1)
-    if key == 27:
-        break
-capture.release()  # 카메라 장치에서 받아온 메모리 해제
-cv2.destroyAllWindows()  # 모든 윈도우 창 닫음
+    path_tmp = './result'+str(name_count)+'.jpg'
+    name_count+=1
+    print(path_tmp)
+    cv2.imwrite(path_tmp,frame)

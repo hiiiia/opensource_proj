@@ -1,106 +1,40 @@
-import cv2
-import os
-import pafy
-from pathlib import Path
+# import json
+# from glob import glob
 
-# MPII에서 각 파트 번호, 선으로 연결될 POSE_PAIRS
-BODY_PARTS = {"Head": 0, "Neck": 1, "RShoulder": 2, "RElbow": 3, "RWrist": 4,
-              "LShoulder": 5, "LElbow": 6, "LWrist": 7, "RHip": 8, "RKnee": 9,
-              "RAnkle": 10, "LHip": 11, "LKnee": 12, "LAnkle": 13, "Chest": 14,
-              "Background": 15}
+# exercise_dict = {}
+# annot_path_list = glob('./*.json')
+# exercise_idx = 0
+# for annot_path in annot_path_list:
+#     with open(annot_path,'rt', encoding='UTF8') as f:
+#         data = json.load(f)['type_info']
+#     seq_idx = annot_path.split('/')[-1].split('-')[2][:-5]
 
-POSE_PAIRS = [["Head", "Neck"], ["Neck", "RShoulder"], ["RShoulder", "RElbow"],
-              ["RElbow", "RWrist"], ["Neck", "LShoulder"], ["LShoulder", "LElbow"],
-              ["LElbow", "LWrist"], ["Neck", "Chest"], ["Chest", "RHip"], ["RHip", "RKnee"],
-              ["RKnee", "RAnkle"], ["Chest", "LHip"], ["LHip", "LKnee"], ["LKnee", "LAnkle"]]
+#     if data['exercise'] not in exercise_dict:
+#         exercise_dict[data['exercise']] = {'exercise_idx': exercise_idx, 'seq_idx': [], 'attr_name': []}
+#         exercise_idx += 1
+#     if seq_idx not in exercise_dict[data['exercise']]['seq_idx']:
+#         exercise_dict[data['exercise']]['seq_idx'].append(seq_idx)
+
+#     for condition in data['conditions']:
+#         attr_name = condition['condition']
+#         if attr_name not in exercise_dict[data['exercise']]['attr_name']:
+#             exercise_dict[data['exercise']]['attr_name'].append(attr_name)
+
+# with open('exercise_dict.json', 'w') as f:
+#     json.dump(exercise_dict, f)
 
 
-protoFile = "./open_source_pj/3rd_party/openpose-master/models/pose/mpi/pose_deploy_linevec_faster_4_stages.prototxt"
-weightsFile ="./open_source_pj/3rd_party/openpose-master/models/pose/mpi/pose_iter_160000.caffemodel"
-# 위의 path에 있는 network 모델 불러오기
-net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
+import json
+import numpy as np
+import tensorflow as tf
 
+def get_bbox(str):
+    obj = json.loads(str.decode('utf-8'))
+    bbox = obj['bounding_box']
+    return np.array([bbox['x'], bbox['y'], bbox['height'], bbox['width']], dtype='f')
 
-# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA) #벡엔드로 쿠다를 사용하여 속도향상
-# net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA) # 쿠다 디바이스에 계산 요청
+def get_multiple_bboxes(str):
+    return [[get_bbox(x) for x in str]]
 
-
-###카메라랑 연결
-
-#capture = cv2.VideoCapture(best.url)
-#frameRate = int(capture.get(cv2.CAP_PROP_FPS))
-#capture = cv2.VideoCapture(0)  # 카메라 정보 받아옴
-# capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640) #카메라 속성 설정
-# capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480) # width:너비, height: 높이
-
-inputWidth = 640;
-inputHeight = 480;
-inputScale = 1.0 / 255;
-
-path = 'C:/Users/User/Desktop/ai/013.피트니스자세_sample/원천데이터/1/C/033-1-1-21-Z17_C'
-os.chdir(path)
-files = os.listdir(path)
-name_count = 1
-# 반복문을 통해 카메라에서 프레임을 지속적으로 받아옴
-for file in files : 
-    # 웹캠으로부터 영상 가져옴
-    frame=cv2.imread(file)
-
-    # 영상이 커서 느리면 사이즈를 줄이자
-    # frame=cv2.resize(frame,dsize=(320,240),interpolation=cv2.INTER_AREA)
-
-    # 웹캠으로부터 영상을 가져올 수 없으면 웹캠 중지
-  
-    #
-    frameWidth = frame.shape[1]
-    frameHeight = frame.shape[0]
-
-    inpBlob = cv2.dnn.blobFromImage(frame, inputScale, (inputWidth, inputHeight), (0, 0, 0), swapRB=False, crop=False)
-
-    imgb = cv2.dnn.imagesFromBlob(inpBlob)
-    # cv2.imshow("motion",(imgb[0]*255.0).astype(np.uint8))
-
-    # network에 넣어주기
-    net.setInput(inpBlob)
-
-    # 결과 받아오기
-    output = net.forward()
-
-    # 키포인트 검출시 이미지에 그려줌
-    points = []
-    for i in range(0, 15):
-        # 해당 신체부위 신뢰도 얻음.
-        probMap = output[0, i, :, :]
-
-        # global 최대값 찾기
-        minVal, prob, minLoc, point = cv2.minMaxLoc(probMap)
-
-        # 원래 이미지에 맞게 점 위치 변경
-        x = (frameWidth * point[0]) / output.shape[3]
-        y = (frameHeight * point[1]) / output.shape[2]
-
-        # 키포인트 검출한 결과가 0.1보다 크면(검출한곳이 위 BODY_PARTS랑 맞는 부위면) points에 추가, 검출했는데 부위가 없으면 None으로
-        if prob > 0.1:
-            cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 255), thickness=-1,
-                       lineType=cv2.FILLED)  # circle(그릴곳, 원의 중심, 반지름, 색)
-            cv2.putText(frame, "{}".format(i), (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1,
-                        lineType=cv2.LINE_AA)
-            points.append((int(x), int(y)))
-        else:
-            points.append(None)
-
-    # 각 POSE_PAIRS별로 선 그어줌 (머리 - 목, 목 - 왼쪽어깨, ...)
-    for pair in POSE_PAIRS:
-        partA = pair[0]  # Head
-        partA = BODY_PARTS[partA]  # 0
-        partB = pair[1]  # Neck
-        partB = BODY_PARTS[partB]  # 1
-
-        # partA와 partB 사이에 선을 그어줌 (cv2.line)
-        if points[partA] and points[partB]:
-            cv2.line(frame, points[partA], points[partB], (0, 255, 0), 2)
-
-    path_tmp = './result'+str(name_count)+'.jpg'
-    name_count+=1
-    print(path_tmp)
-    cv2.imwrite(path_tmp,frame)
+raw = tf.placeholder(tf.string, [None])
+[parsed] = tf.py_func(get_multiple_bboxes, [raw], [tf.float32])
