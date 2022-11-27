@@ -49,12 +49,14 @@ global body_cord
 file_path = "./data"
 file_list = os.listdir(file_path)
 file_list = [file_json for file_json in file_list if file_json.endswith(".json")]
-print(file_list)
+#print(file_list)
+percent = len(file_list)
+percent_num=0
 for file_json in file_list:
     with open(file_path+'/'+file_json, 'r', encoding='UTF-8') as file:
         data = json.load(file)
         exercies_type = data['type_info']['exercise']
-        print(exercies_type)
+        #print(exercies_type)
 
         file = "./" + exercies_type + ".csv"
         if not os.path.exists(file):
@@ -93,14 +95,18 @@ for file_json in file_list:
                 tmp_list = []
 
                 for x,point_data in data['pts'].items():
-                    print(f'{x}',end=' : ')
+                    #print(f'{x}',end=' : ')
                     for t,y in point_data.items():
-                        print(f'{t} {y}',end=' ')
+                        #print(f'{t} {y}',end=' ')
                         tmp_list.append(y)
-                    print("")
+                    #print("")
 
 
-                print(data['active'])
+                #print(data['active'])
                 tmp_list.append(data['active'])
+                tmp_df = pd.Series(tmp_list,index=body_cord.columns)
+                #body_cord = pd.concat([body_cord,tmp_df],ignore_index=True)
                 body_cord = body_cord.append(pd.Series(tmp_list,index=body_cord.columns), ignore_index=True)
         body_cord.to_csv(file,index=False)
+    percent_num+=1
+    print(f'{percent_num/percent*100}% Done')
